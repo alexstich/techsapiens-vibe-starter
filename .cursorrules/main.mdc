@@ -22,6 +22,3 @@ Use docs as reference.
 @docs/PROJECT_PLAN.md
 @docs/DESIGN_SYSTEM.md
 @docs/DATABASE.md
-
-Important:
-Record each user request in the chat in the VIBE_LOG.md file. Just the request, without your response. You don't need to include files or code excerpts. If the request is very long, reduce the code or log portion, meaning you don't need to include specifics. It's important to record requests without specific data so the essence of the user's request is clear!

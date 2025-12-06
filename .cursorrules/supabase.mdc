@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+## Supabase в проекте
+
+### Клиенты
+Используй утилиты из `src/lib/supabase/`:
+
+```typescript
+// В Client Component ('use client')
+import { createBrowserClient } from '@/lib/supabase'
+const supabase = createBrowserClient()
+
+// В Server Component / Route Handler / Server Action
+import { createServerClient } from '@/lib/supabase'
+const supabase = await createServerClient()
+```
+
+### Скрипты (scripts/)
+| Команда | Назначение |
+|---------|------------|
+| `./scripts/gen-types.sh` | Генерация TypeScript типов из схемы БД |
+| `./scripts/db-push.sh` | Применение миграций к удалённой БД |
+| `./scripts/db-diff.sh <name>` | Создание миграции из diff |
+| `./scripts/supabase-login.sh` | Авторизация в Supabase CLI |
+
+### Workflow
+1. После изменения схемы БД в Supabase Dashboard → `./scripts/gen-types.sh`
+2. Для миграций: создай SQL в `supabase/migrations/` → `./scripts/db-push.sh`
+3. Типы автоматически обновятся в `src/lib/supabase/types.ts`
+
+### Переменные окружения
+Все параметры Supabase хранятся в `.env`:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
