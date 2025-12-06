@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -149,26 +150,44 @@ export default function ProfilePage() {
   if (isLoading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Загрузка...</p>
+        <div className="flex flex-col items-center gap-4 animate-in fade-in-0 duration-300">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Загрузка профиля...</p>
+        </div>
       </div>
     )
   }
 
+  // Check if profile is incomplete
+  const isProfileIncomplete = !profile.bio || !profile.skills || !profile.looking_for
+
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen bg-background py-6 sm:py-8 px-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
       <div className="max-w-[500px] mx-auto space-y-4">
         {/* Back button */}
         <Button
           variant="ghost"
           onClick={() => router.push("/")}
-          className="mb-2"
+          className="mb-2 h-10 touch-target transition-all hover:shadow-sm"
         >
           ← Назад
         </Button>
 
+        {/* Incomplete profile alert */}
+        {isProfileIncomplete && (
+          <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+            <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+              💡 Заполните профиль полностью для лучшего подбора
+            </p>
+            <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
+              Добавьте bio, навыки и что вы ищете
+            </p>
+          </div>
+        )}
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Мой профиль</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl text-center">Мой профиль</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Ready to Chat Switch - Prominent at top */}

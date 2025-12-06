@@ -46,10 +46,10 @@ export function UserBubble({
   return (
     <div
       className={`
-        absolute rounded-full transition-all duration-200 ease-out
-        flex items-center justify-center text-white font-medium text-xs
+        absolute rounded-full flex items-center justify-center text-white font-medium text-xs
+        transition-all duration-200 ease-out
         ${user.isReady 
-          ? "cursor-pointer hover:z-20" 
+          ? "cursor-pointer hover:z-20 hover:scale-110 hover:shadow-xl active:scale-105" 
           : "opacity-40 cursor-not-allowed"
         }
         ${user.isReady && scale === 1 ? "animate-pulse-subtle" : ""}

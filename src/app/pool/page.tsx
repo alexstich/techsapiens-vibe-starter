@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { Header } from "@/components/Header"
 import { PoolCanvas } from "@/components/PoolCanvas"
+import { ErrorMessage } from "@/components/ErrorMessage"
+import { Button } from "@/components/ui/button"
 import type { PoolUser } from "@/types"
 
 export default function PoolPage() {
@@ -53,12 +55,12 @@ export default function PoolPage() {
         <Header 
           showBackButton 
           backHref="/" 
-          title={query ? `Searching: ${query}` : undefined} 
+          title={query ? `Поиск: ${query}` : undefined} 
         />
         <main className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            <p className="text-muted-foreground">Searching the pool...</p>
+          <div className="flex flex-col items-center gap-4 animate-in fade-in-0 duration-300">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Ищем людей в пуле...</p>
           </div>
         </main>
       </div>
@@ -72,18 +74,14 @@ export default function PoolPage() {
         <Header 
           showBackButton 
           backHref="/" 
-          title={query ? `Searching: ${query}` : undefined} 
+          title={query ? `Поиск: ${query}` : undefined} 
         />
         <main className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-destructive">{error}</p>
-            <button 
-              onClick={() => router.push("/")}
-              className="text-blue-500 hover:underline"
-            >
-              Go back home
-            </button>
-          </div>
+          <ErrorMessage
+            message={error}
+            onRetry={() => window.location.reload()}
+            retryLabel="Попробовать снова"
+          />
         </main>
       </div>
     )
@@ -96,17 +94,25 @@ export default function PoolPage() {
         <Header 
           showBackButton 
           backHref="/" 
-          title={query ? `Searching: ${query}` : undefined} 
+          title={query ? `Поиск: ${query}` : undefined} 
         />
         <main className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-muted-foreground">No one found matching your search.</p>
-            <button 
+          <div className="flex flex-col items-center gap-6 text-center animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
+            <div className="rounded-full bg-muted p-4">
+              <span className="text-4xl">🔍</span>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg">Никого не найдено</h3>
+              <p className="text-muted-foreground max-w-sm">
+                По вашему запросу нет совпадений. Попробуйте другой поиск.
+              </p>
+            </div>
+            <Button 
               onClick={() => router.push("/")}
-              className="text-blue-500 hover:underline"
+              className="transition-all hover:shadow-md hover:-translate-y-0.5"
             >
-              Try a different search
-            </button>
+              Новый поиск
+            </Button>
           </div>
         </main>
       </div>
@@ -119,7 +125,7 @@ export default function PoolPage() {
       <Header 
         showBackButton 
         backHref="/" 
-        title={`Searching: ${query}`} 
+        title={`Поиск: ${query}`} 
       />
       <PoolCanvas users={users} />
     </div>
