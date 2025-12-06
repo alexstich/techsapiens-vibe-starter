@@ -1,0 +1,21 @@
+---
+alwaysApply: true
+---
+I'm building "The Pool" - a visual space for finding conversation partners at events.
+
+Tech stack:
+- Next.js 14 (App Router)
+- Supabase (Auth, Database, pgvector)
+- Tailwind CSS
+- shadcn/ui
+- OpenAI API (embeddings)
+- TypeScript
+
+Design:
+- Dark theme (bg: #0a0a0f)
+- Accent: blue (#3b82f6)
+- Pool colors: purple (#a855f7) → green (#22c55e) gradient by match score
+
+Keep code simple and minimal. No over-engineering.
+
+Use docs for thinking
