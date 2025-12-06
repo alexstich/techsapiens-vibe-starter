@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { Header } from "@/components/Header"
@@ -9,7 +9,7 @@ import { ErrorMessage } from "@/components/ErrorMessage"
 import { Button } from "@/components/ui/button"
 import type { PoolUser } from "@/types"
 
-export default function PoolPage() {
+function PoolContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const query = searchParams.get("q")
@@ -129,6 +129,28 @@ export default function PoolPage() {
       />
       <PoolCanvas users={users} />
     </div>
+  )
+}
+
+function PoolLoading() {
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header showBackButton backHref="/" />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 animate-in fade-in-0 duration-300">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Загрузка...</p>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export default function PoolPage() {
+  return (
+    <Suspense fallback={<PoolLoading />}>
+      <PoolContent />
+    </Suspense>
   )
 }
 
