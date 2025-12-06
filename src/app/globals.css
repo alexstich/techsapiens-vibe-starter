@@ -76,3 +76,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom animations for Pool bubbles */
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 12px 2px currentColor;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}

@@ -114,9 +114,8 @@ export default function ProfilePage() {
       })
       .eq("id", userId)
     
-    setIsSaving(false)
-    
     if (error) {
+      setIsSaving(false)
       toast({
         variant: "destructive",
         title: "Ошибка сохранения",
@@ -124,6 +123,22 @@ export default function ProfilePage() {
       })
       return
     }
+    
+    // Генерируем эмбеддинг профиля
+    try {
+      await fetch("/api/profile/embedding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ profileId: userId }),
+      })
+    } catch (embeddingError) {
+      console.error("Error generating embedding:", embeddingError)
+      // Не показываем ошибку пользователю, эмбеддинг - не критичен
+    }
+    
+    setIsSaving(false)
     
     toast({
       title: "Профиль сохранён",
