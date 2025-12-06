@@ -14,13 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          can_help: string | null
+          created_at: string | null
+          embedding: string | null
+          has_startup: boolean | null
+          id: string
+          is_ready_to_chat: boolean | null
+          linkedin: string | null
+          looking_for: string[] | null
+          name: string
+          needs_help: string | null
+          skills: string[] | null
+          startup_description: string | null
+          startup_stage: string | null
+          telegram: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          can_help?: string | null
+          created_at?: string | null
+          embedding?: string | null
+          has_startup?: boolean | null
+          id: string
+          is_ready_to_chat?: boolean | null
+          linkedin?: string | null
+          looking_for?: string[] | null
+          name: string
+          needs_help?: string | null
+          skills?: string[] | null
+          startup_description?: string | null
+          startup_stage?: string | null
+          telegram?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          can_help?: string | null
+          created_at?: string | null
+          embedding?: string | null
+          has_startup?: boolean | null
+          id?: string
+          is_ready_to_chat?: boolean | null
+          linkedin?: string | null
+          looking_for?: string[] | null
+          name?: string
+          needs_help?: string | null
+          skills?: string[] | null
+          startup_description?: string | null
+          startup_stage?: string | null
+          telegram?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_conversation: {
+        Args: { message_limit?: number; user1_id: string; user2_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          is_mine: boolean
+          receiver_id: string
+          sender_id: string
+        }[]
+      }
+      match_profiles: {
+        Args: {
+          current_user_id?: string
+          match_count?: number
+          query_embedding: string
+        }
+        Returns: {
+          bio: string
+          id: string
+          is_ready_to_chat: boolean
+          name: string
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
