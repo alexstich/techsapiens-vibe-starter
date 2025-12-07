@@ -14,8 +14,8 @@ interface PoolGroupProps {
   groupOffset: Position
 }
 
-export const GROUP_SIZE = 300 // Width and height of each group container
-const LAYOUT_RADIUS = 120 // Radius for spiral layout
+export const GROUP_SIZE = 280 // Width and height of each group container
+const LAYOUT_RADIUS = 100 // Radius for spiral layout (более компактно)
 
 export function PoolGroup({ 
   users, 
@@ -54,17 +54,12 @@ export function PoolGroup({
 
   return (
     <div
-      className="relative bg-secondary/20 rounded-2xl border border-border/50"
+      className="relative"
       style={{
         width: GROUP_SIZE,
         height: GROUP_SIZE,
       }}
     >
-      {/* Optional: Group label */}
-      <div className="absolute top-2 left-3 text-xs text-muted-foreground/50 font-medium">
-        Group {groupIndex + 1}
-      </div>
-
       {/* User bubbles */}
       {positionedUsers.map((user) => {
         const scale = getProximityScale(user.position)

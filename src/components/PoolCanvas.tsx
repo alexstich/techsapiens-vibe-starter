@@ -13,7 +13,7 @@ interface PoolCanvasProps {
 }
 
 const GROUP_COUNT = 4
-const GAP = 24 // Gap between groups in pixels
+const GAP = 8 // Gap between groups in pixels (более компактно)
 
 // Hook to detect mobile viewport
 function useIsMobile() {
@@ -147,14 +147,23 @@ export function PoolCanvas({ users }: PoolCanvasProps) {
             >
               {/* Avatar circle */}
               <div 
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold shrink-0"
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold shrink-0 overflow-hidden"
                 style={{ 
                   backgroundColor: user.isReady 
                     ? `hsl(${120 + (1 - user.score) * 180}, 70%, 50%)` 
                     : "hsl(0, 0%, 40%)" 
                 }}
               >
-                {user.name.charAt(0).toUpperCase()}
+                {user.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img 
+                    src={user.avatarUrl} 
+                    alt={user.name} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
               </div>
               
               {/* User info */}

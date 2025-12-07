@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useCallback } from "react"
+import { useRef, useCallback, useState } from "react"
 import type { PoolUser, Position } from "@/types"
 import { getBubbleSize, interpolateColor } from "@/lib/pool-utils"
 
@@ -20,9 +20,11 @@ export function UserBubble({
   onClick 
 }: UserBubbleProps) {
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [imgError, setImgError] = useState(false)
 
   const size = getBubbleSize(user.score)
   const color = interpolateColor(user.score)
+  const hasAvatar = user.avatarUrl && !imgError
 
   const handleMouseEnter = useCallback(() => {
     // 200ms debounce
@@ -46,7 +48,7 @@ export function UserBubble({
   return (
     <div
       className={`
-        absolute rounded-full flex items-center justify-center text-white font-medium text-xs
+        absolute rounded-full flex items-center justify-center overflow-hidden
         transition-all duration-200 ease-out
         ${user.isReady 
           ? "cursor-pointer hover:z-20 hover:scale-110 hover:shadow-xl active:scale-105" 
@@ -57,22 +59,33 @@ export function UserBubble({
       style={{
         width: size,
         height: size,
-        backgroundColor: color,
+        backgroundColor: hasAvatar ? 'transparent' : color,
         left: position.x - size / 2,
         top: position.y - size / 2,
         boxShadow: `0 0 ${size / 3}px ${color}40`,
         transform: `scale(${scale})`,
         zIndex: scale > 1 ? 10 : 1,
+        border: hasAvatar ? `2px solid ${color}` : 'none',
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       title={user.name}
     >
-      {/* First letter of name */}
-      <span className="select-none">
-        {user.name.charAt(0).toUpperCase()}
-      </span>
+      {hasAvatar ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={user.avatarUrl!}
+          alt={user.name}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        /* First letter of name as fallback */
+        <span className="select-none text-white font-medium text-xs">
+          {user.name.charAt(0).toUpperCase()}
+        </span>
+      )}
     </div>
   )
 }

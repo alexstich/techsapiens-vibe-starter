@@ -30,6 +30,8 @@ export interface PoolUser {
   score: number;
   /** Position in the pool visualization */
   position: Position;
+  /** Avatar URL for display */
+  avatarUrl?: string | null;
 }
 
 // ============================================
