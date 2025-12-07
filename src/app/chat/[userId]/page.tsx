@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2, RefreshCw, ChevronDown, ChevronUp, MessageCircle, ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { Header } from "@/components/Header"
@@ -24,7 +24,12 @@ interface ChatUserProfile {
 export default function ChatPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const userId = params.userId as string
+  
+  // Сохраняем query параметр пула для навигации назад
+  const poolQuery = searchParams.get("q")
+  const backUrl = poolQuery ? `/pool?q=${encodeURIComponent(poolQuery)}` : "/pool"
 
   const supabase = createClient()
 
@@ -143,7 +148,7 @@ export default function ChatPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header showBackButton backHref="/pool" />
+        <Header showBackButton backHref={backUrl} />
         <main className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -158,7 +163,7 @@ export default function ChatPage() {
   if (error || !otherUser) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header showBackButton backHref="/pool" />
+        <Header showBackButton backHref={backUrl} />
         <main className="flex-1 flex items-center justify-center">
           <ErrorMessage
             message={error || "Пользователь не найден"}
@@ -180,7 +185,7 @@ export default function ChatPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/pool")}
+              onClick={() => router.push(backUrl)}
               className="gap-1 px-2"
             >
               ← Назад

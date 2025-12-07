@@ -17,6 +17,10 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "The Pool - Find the right people to talk to",
   description: "Connect with the right people based on your needs and interests",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

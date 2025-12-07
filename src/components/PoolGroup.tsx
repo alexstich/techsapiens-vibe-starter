@@ -7,31 +7,32 @@ import { UserBubble } from "./UserBubble"
 
 interface PoolGroupProps {
   users: PoolUser[]
-  groupIndex: number
   onHover: (user: PoolUser | null, bubblePosition?: Position) => void
   onClick: (user: PoolUser) => void
   mousePosition: Position | null
-  groupOffset: Position
+  groupOffset?: Position
+  size?: number // Динамический размер контейнера
+  radius?: number // Радиус для spiral layout
 }
 
-export const GROUP_SIZE = 280 // Width and height of each group container
-const LAYOUT_RADIUS = 100 // Radius for spiral layout (более компактно)
+export const GROUP_SIZE = 280 // Дефолтный размер группы
+const DEFAULT_RADIUS = 100 // Дефолтный радиус
 
 export function PoolGroup({ 
   users, 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  groupIndex, 
   onHover, 
   onClick, 
   mousePosition,
-  groupOffset,
+  groupOffset = { x: 0, y: 0 },
+  size = GROUP_SIZE,
+  radius = DEFAULT_RADIUS,
 }: PoolGroupProps) {
   // Calculate positions for all users in this group
   const positionedUsers = useMemo(() => {
-    const centerX = GROUP_SIZE / 2
-    const centerY = GROUP_SIZE / 2
-    return layoutGroup(users, centerX, centerY, LAYOUT_RADIUS)
-  }, [users])
+    const centerX = size / 2
+    const centerY = size / 2
+    return layoutGroup(users, centerX, centerY, radius)
+  }, [users, size, radius])
 
   // Calculate scale for each bubble based on mouse proximity
   const getProximityScale = (bubblePosition: Position): number => {
@@ -57,8 +58,8 @@ export function PoolGroup({
     <div
       className="relative"
       style={{
-        width: GROUP_SIZE,
-        height: GROUP_SIZE,
+        width: size,
+        height: size,
       }}
     >
       {/* User bubbles */}

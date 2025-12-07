@@ -1,19 +1,16 @@
 "use client"
 
-import { useMemo, useState, useCallback, useRef, useEffect } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import type { PoolUser, Position } from "@/types"
-import { distributeInGroups } from "@/lib/pool-utils"
-import { PoolGroup, GROUP_SIZE } from "./PoolGroup"
+import { PoolGroup } from "./PoolGroup"
 import { BubbleTooltip } from "./BubbleTooltip"
 import { useToast } from "@/hooks/use-toast"
 
 interface PoolCanvasProps {
   users: PoolUser[]
+  searchQuery?: string
 }
-
-const GROUP_COUNT = 4
-const GAP = 8 // Gap between groups in pixels (более компактно)
 
 // Hook to detect mobile viewport
 function useIsMobile() {
@@ -29,7 +26,7 @@ function useIsMobile() {
   return isMobile
 }
 
-export function PoolCanvas({ users }: PoolCanvasProps) {
+export function PoolCanvas({ users, searchQuery }: PoolCanvasProps) {
   const router = useRouter()
   const { toast } = useToast()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -39,11 +36,21 @@ export function PoolCanvas({ users }: PoolCanvasProps) {
   const [tooltipPosition, setTooltipPosition] = useState<Position | null>(null)
   const [mousePosition, setMousePosition] = useState<Position | null>(null)
   const [tappedUser, setTappedUser] = useState<PoolUser | null>(null)
+  const [containerSize, setContainerSize] = useState({ width: 600, height: 600 })
 
-  // Split users into 4 groups
-  const groups = useMemo(() => {
-    return distributeInGroups(users, GROUP_COUNT)
-  }, [users])
+  // Track container size
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        setContainerSize({ width: rect.width, height: rect.height })
+      }
+    }
+    
+    updateSize()
+    window.addEventListener("resize", updateSize)
+    return () => window.removeEventListener("resize", updateSize)
+  }, [])
 
   // Track mouse movement for proximity effects
   useEffect(() => {
@@ -79,12 +86,17 @@ export function PoolCanvas({ users }: PoolCanvasProps) {
   }, [])
 
   const handleClick = useCallback((user: PoolUser) => {
+    // Формируем URL чата с сохранением query параметра
+    const chatUrl = searchQuery 
+      ? `/chat/${user.id}?q=${encodeURIComponent(searchQuery)}`
+      : `/chat/${user.id}`
+    
     // On mobile: first tap shows tooltip, second tap navigates
     if (isMobile) {
       if (tappedUser?.id === user.id) {
         // Second tap - navigate
         if (user.isReady) {
-          router.push(`/chat/${user.id}`)
+          router.push(chatUrl)
         } else {
           toast({
             title: "Пользователь недоступен",
@@ -103,7 +115,7 @@ export function PoolCanvas({ users }: PoolCanvasProps) {
 
     // Desktop: direct navigation
     if (user.isReady) {
-      router.push(`/chat/${user.id}`)
+      router.push(chatUrl)
     } else {
       toast({
         title: "Пользователь недоступен",
@@ -111,11 +123,11 @@ export function PoolCanvas({ users }: PoolCanvasProps) {
         variant: "destructive",
       })
     }
-  }, [router, toast, isMobile, tappedUser])
+  }, [router, toast, isMobile, tappedUser, searchQuery])
 
-  // Calculate grid offset for centering
-  const gridWidth = GROUP_SIZE * 2 + GAP
-  const gridHeight = GROUP_SIZE * 2 + GAP
+  // Рассчитываем размер одной группы на весь экран
+  const poolSize = Math.min(containerSize.width - 48, containerSize.height - 48) // отступы по 24px
+  const poolRadius = Math.min(poolSize * 0.4, 250) // Радиус для спирального layout
 
   // Clear tapped user when clicking outside
   const handleContainerClick = useCallback((e: React.MouseEvent) => {
@@ -199,41 +211,26 @@ export function PoolCanvas({ users }: PoolCanvasProps) {
     )
   }
 
-  // Desktop: bubble grid view
+  // Desktop: bubble view - одна группа на весь экран
   return (
     <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in-0 duration-300">
       {/* Tooltip */}
       <BubbleTooltip user={hoveredUser} position={tooltipPosition} />
 
-      {/* 2x2 Grid of groups */}
+      {/* Одна группа на весь экран */}
       <div 
         ref={containerRef}
         className="flex-1 flex items-center justify-center p-6"
         onClick={handleContainerClick}
       >
-        <div 
-          className="grid grid-cols-2 grid-rows-2 relative"
-          style={{
-            width: gridWidth,
-            height: gridHeight,
-            gap: GAP,
-          }}
-        >
-          {groups.map((groupUsers, index) => (
-            <PoolGroup
-              key={index}
-              users={groupUsers}
-              groupIndex={index}
-              onHover={handleHover}
-              onClick={handleClick}
-              mousePosition={mousePosition}
-              groupOffset={{
-                x: (index % 2) * (GROUP_SIZE + GAP),
-                y: Math.floor(index / 2) * (GROUP_SIZE + GAP),
-              }}
-            />
-          ))}
-        </div>
+        <PoolGroup
+          users={users}
+          onHover={handleHover}
+          onClick={handleClick}
+          mousePosition={mousePosition}
+          size={poolSize}
+          radius={poolRadius}
+        />
       </div>
 
       {/* Legend */}

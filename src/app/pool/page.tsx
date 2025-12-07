@@ -127,7 +127,7 @@ function PoolContent() {
         backHref="/" 
         title={`Поиск: ${query}`} 
       />
-      <PoolCanvas users={users} />
+      <PoolCanvas users={users} searchQuery={query || undefined} />
     </div>
   )
 }
