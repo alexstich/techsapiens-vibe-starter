@@ -37,19 +37,8 @@ export function getBubbleSize(score: number): number {
 }
 
 /**
- * Shuffles array using Fisher-Yates algorithm
- */
-function shuffleArray<T>(array: T[]): T[] {
-  const result = [...array];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
-
-/**
- * Distributes users into groups randomly, then sorts each group by score descending
+ * Distributes users into groups while preserving relevance order
+ * Users are sorted by score, then distributed so highest scores are spread across groups
  * @param users - Array of PoolUser objects
  * @param groupCount - Number of groups to create
  * @returns Array of user groups
@@ -59,21 +48,20 @@ export function distributeInGroups(users: PoolUser[], groupCount: number): PoolU
     return [];
   }
 
-  // Shuffle users randomly
-  const shuffled = shuffleArray(users);
+  // First sort users by score descending to ensure order is preserved
+  const sorted = [...users].sort((a, b) => b.score - a.score);
 
   // Initialize groups
   const groups: PoolUser[][] = Array.from({ length: groupCount }, () => []);
 
-  // Distribute users round-robin style
-  shuffled.forEach((user, index) => {
+  // Distribute users round-robin style (keeping relative order)
+  // This spreads high-score users across all groups
+  sorted.forEach((user, index) => {
     groups[index % groupCount].push(user);
   });
 
-  // Sort each group by score descending
-  groups.forEach((group) => {
-    group.sort((a, b) => b.score - a.score);
-  });
+  // Each group is already sorted by the round-robin distribution
+  // (first in each group has highest score)
 
   return groups;
 }

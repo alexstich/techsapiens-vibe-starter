@@ -19,6 +19,7 @@ const LAYOUT_RADIUS = 100 // Radius for spiral layout (более компакт
 
 export function PoolGroup({ 
   users, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   groupIndex, 
   onHover, 
   onClick, 

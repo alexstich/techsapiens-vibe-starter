@@ -2,13 +2,24 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Loader2, RefreshCw } from "lucide-react"
+import { Loader2, RefreshCw, ChevronDown, ChevronUp, MessageCircle, ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { Header } from "@/components/Header"
 import { ChatWindow } from "@/components/ChatWindow"
 import { ErrorMessage } from "@/components/ErrorMessage"
 import { Button } from "@/components/ui/button"
 import type { ConversationMessage } from "@/types"
+
+interface ChatUserProfile {
+  id: string
+  name: string
+  bio: string | null
+  skills: string[] | null
+  telegram: string | null
+  linkedin: string | null
+  can_help: string | null
+  looking_for: string[] | null
+}
 
 export default function ChatPage() {
   const params = useParams()
@@ -17,7 +28,8 @@ export default function ChatPage() {
 
   const supabase = createClient()
 
-  const [otherUser, setOtherUser] = useState<{ id: string; name: string } | null>(null)
+  const [otherUser, setOtherUser] = useState<ChatUserProfile | null>(null)
+  const [showProfile, setShowProfile] = useState(false)
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -27,7 +39,7 @@ export default function ChatPage() {
   const fetchOtherUser = useCallback(async () => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, name")
+      .select("id, name, bio, skills, telegram, linkedin, can_help, looking_for")
       .eq("id", userId)
       .single()
 
@@ -36,7 +48,7 @@ export default function ChatPage() {
       return null
     }
 
-    return data
+    return data as ChatUserProfile
   }, [supabase, userId])
 
   // Fetch messages
@@ -160,27 +172,143 @@ export default function ChatPage() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Custom header with refresh button */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/pool")}
-            className="gap-2"
-          >
-            ← Назад
-          </Button>
-          <span className="font-medium">Чат с {otherUser.name}</span>
+      {/* Custom header with user profile */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        {/* Main header row */}
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/pool")}
+              className="gap-1 px-2"
+            >
+              ← Назад
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                {otherUser.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex flex-col">
+                <span className="font-medium text-sm">{otherUser.name}</span>
+                {otherUser.bio && (
+                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                    {otherUser.bio}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowProfile(!showProfile)}
+              className="gap-1 text-xs"
+            >
+              {showProfile ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              Профиль
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-        </Button>
+        
+        {/* Expandable profile section */}
+        {showProfile && (
+          <div className="px-4 pb-3 border-t border-border/50 bg-muted/30">
+            <div className="pt-3 space-y-2">
+              {/* Bio */}
+              {otherUser.bio ? (
+                <p className="text-sm text-foreground">{otherUser.bio}</p>
+              ) : null}
+              
+              {/* Skills */}
+              {otherUser.skills && otherUser.skills.length > 0 ? (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Навыки:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {otherUser.skills.slice(0, 8).map((skill, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded-full"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                    {otherUser.skills.length > 8 && (
+                      <span className="px-2 py-0.5 text-xs text-muted-foreground">
+                        +{otherUser.skills.length - 8}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+              
+              {/* Looking for */}
+              {otherUser.looking_for && otherUser.looking_for.length > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-foreground font-medium">Ищет:</span>{" "}
+                  {otherUser.looking_for.join(", ")}
+                </p>
+              ) : null}
+              
+              {/* Can help */}
+              {otherUser.can_help ? (
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  <span className="text-foreground font-medium">Может помочь:</span>{" "}
+                  {otherUser.can_help}
+                </p>
+              ) : null}
+              
+              {/* Contact links */}
+              {(otherUser.telegram || otherUser.linkedin) ? (
+                <div className="flex gap-3 pt-1">
+                  {otherUser.telegram && (
+                    <a
+                      href={`https://t.me/${otherUser.telegram.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      <MessageCircle className="h-3 w-3" />
+                      Telegram
+                    </a>
+                  )}
+                  {otherUser.linkedin && (
+                    <a
+                      href={otherUser.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      LinkedIn
+                    </a>
+                  )}
+                </div>
+              ) : null}
+              
+              {/* Empty state when no profile data */}
+              {!otherUser.bio && 
+               (!otherUser.skills || otherUser.skills.length === 0) && 
+               (!otherUser.looking_for || otherUser.looking_for.length === 0) && 
+               !otherUser.can_help && 
+               !otherUser.telegram && 
+               !otherUser.linkedin && (
+                <p className="text-xs text-muted-foreground italic">
+                  Профиль ещё не заполнен
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       <ChatWindow
