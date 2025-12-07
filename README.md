@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌊 The Pool
 
-## Getting Started
+**Community OS** — интерактивный поиск нужных людей в сообществе.
 
-First, run the development server:
+Прототип разработан в рамках **TechSapiens Vibe Coding Contest** (Batumi, Dec 7, 2024).
+
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)
+![Tailwind](https://img.shields.io/badge/Tailwind-CSS-06B6D4)
+
+---
+
+## 🎯 Идея
+
+В любом сообществе (конференции, митапы, Telegram-чаты) сложно найти нужного человека. Как узнать, что человек рядом имеет именно тот опыт, который тебе нужен?
+
+**The Pool** превращает пассивный список участников в активную, визуальную сеть контактов с AI-поиском.
+
+---
+
+## ✨ Основные фичи
+
+### 🔍 RAG-поиск по профилям
+- Семантический поиск через OpenAI embeddings + pgvector
+- Введи запрос "разработчик с опытом в healthcare" и найди нужных людей
+
+### 🎨 Интерактивный Pool
+- Визуальное пространство с профилями в виде "пузырей"
+- Цветовая градация: синий (максимально релевантен) → красный (менее релевантен)
+- Hover-эффекты и группировка по категориям
+
+### 🚦 Статус "Готов к общению"
+- Traffic Light система: включи/выключи готовность к новым контактам
+- Недоступных пользователей видно, но нельзя начать чат
+
+### 💬 Простой чат
+- Минималистичный интерфейс для быстрого общения
+- Real-time обновления через Supabase
+
+### 👤 Профили участников
+- Навыки и интересы
+- Информация о стартапе (стадия, описание)
+- Контакты (Telegram, LinkedIn)
+
+---
+
+## 🛠 Технологический стек
+
+| Слой | Технологии |
+|------|------------|
+| **Frontend** | Next.js 14 (App Router), React 18, TypeScript |
+| **Styling** | Tailwind CSS, shadcn/ui, Lucide Icons |
+| **Backend** | Next.js API Routes (serverless) |
+| **Database** | Supabase (PostgreSQL + pgvector) |
+| **Auth** | Supabase Auth (email magic link) |
+| **AI/ML** | OpenAI text-embedding-3-small |
+| **Deploy** | Vercel |
+
+---
+
+## 🚀 Быстрый старт
+
+### 1. Клонирование и установка
+
+```bash
+git clone https://github.com/your-username/techsapiens-vibe-starter.git
+cd techsapiens-vibe-starter
+npm install
+```
+
+### 2. Настройка переменных окружения
+
+Создайте `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+OPENAI_API_KEY=your_openai_key
+```
+
+### 3. Настройка базы данных
+
+Выполните SQL из `docs/DATABASE.md` в Supabase SQL Editor.
+
+### 4. Запуск
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📁 Структура проекта
 
-## Learn More
+```
+src/
+├── app/
+│   ├── api/              # API Routes
+│   │   ├── search/       # RAG-поиск
+│   │   ├── messages/     # Сообщения
+│   │   ├── profile/      # Профиль и embeddings
+│   │   └── users/        # Пользователи
+│   ├── auth/             # Страница авторизации
+│   ├── chat/[userId]/    # Чат с пользователем
+│   ├── pool/             # Интерактивный Pool
+│   └── profile/          # Редактирование профиля
+├── components/
+│   ├── ui/               # shadcn/ui компоненты
+│   ├── PoolCanvas.tsx    # Визуализация Pool
+│   ├── ChatWindow.tsx    # Окно чата
+│   └── ProfileForm.tsx   # Форма профиля
+├── lib/
+│   └── supabase/         # Клиенты Supabase
+└── hooks/                # React hooks
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📚 Документация
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [`docs/DATABASE.md`](docs/DATABASE.md) — SQL-схема базы данных
+- [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — Дизайн-система
+- [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) — План проекта
+- [`docs/VIBE_LOG.md`](docs/VIBE_LOG.md) — Лог разработки (промпты и процесс)
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🎮 Использование
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Авторизация** — войди через email magic link
+2. **Заполни профиль** — расскажи о себе, навыках и интересах
+3. **Включи статус** — "Готов к общению"
+4. **Ныряй в Pool** — введи запрос и найди нужных людей
+5. **Общайся** — кликни на профиль и начни чат
+
+---
+
+## 📝 Лицензия
+
+MIT License
+
+---
+
+**Made with 🤖 AI-first approach for TechSapiens Vibe Coding Contest**

@@ -34,7 +34,7 @@ export default function ChatPage() {
   const supabase = createClient()
 
   const [otherUser, setOtherUser] = useState<ChatUserProfile | null>(null)
-  const [showProfile, setShowProfile] = useState(false)
+  const [showProfile, setShowProfile] = useState(true)
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)

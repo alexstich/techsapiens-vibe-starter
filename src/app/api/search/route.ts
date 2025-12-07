@@ -134,23 +134,16 @@ function searchProfiles(profiles: ProfileRow[], query: string): PoolUser[] {
         relevance *= 1.3;
       }
       
-      return { profile: p, relevance };
+      // Даем минимальный базовый score всем пользователям (чтобы они тоже отображались)
+      const baseScore = 0.1;
+      return { profile: p, relevance: relevance + baseScore };
     })
-    .filter((item) => item.relevance > 0)
     .sort((a, b) => b.relevance - a.relevance);
 
-  // Если не нашли по точному совпадению, возвращаем рандомную выборку
-  const results = matched.length > 0 
-    ? matched 
-    : profiles
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 50)
-        .map((p, i) => ({ profile: p, relevance: 50 - i }));
-
-  // Конвертируем в PoolUser
-  const maxRelevance = Math.max(...results.map(r => r.relevance), 1);
+  // Конвертируем в PoolUser - возвращаем ВСЕХ пользователей
+  const maxRelevance = Math.max(...matched.map(r => r.relevance), 1);
   
-  return results.slice(0, 100).map((item) => ({
+  return matched.map((item) => ({
     id: item.profile.id, // UUID из Supabase
     name: item.profile.name,
     bio: item.profile.bio || null,
