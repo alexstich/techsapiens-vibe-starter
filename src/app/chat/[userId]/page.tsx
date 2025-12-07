@@ -19,6 +19,7 @@ interface ChatUserProfile {
   linkedin: string | null
   can_help: string | null
   looking_for: string[] | null
+  avatar_url: string | null
 }
 
 export default function ChatPage() {
@@ -44,7 +45,7 @@ export default function ChatPage() {
   const fetchOtherUser = useCallback(async () => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, name, bio, skills, telegram, linkedin, can_help, looking_for")
+      .select("id, name, bio, skills, telegram, linkedin, can_help, looking_for, avatar_url")
       .eq("id", userId)
       .single()
 
@@ -191,9 +192,18 @@ export default function ChatPage() {
               ← Назад
             </Button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
-                {otherUser.name.charAt(0).toUpperCase()}
-              </div>
+              {otherUser.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={otherUser.avatar_url}
+                  alt={otherUser.name}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                  {otherUser.name.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="flex flex-col">
                 <span className="font-medium text-sm">{otherUser.name}</span>
                 {otherUser.bio && (

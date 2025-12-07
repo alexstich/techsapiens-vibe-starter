@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Waves, Home, User, LogOut, ArrowLeft } from "lucide-react"
+import { Waves, Home, User, LogOut, ArrowLeft, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/useAuth"
 
@@ -46,6 +46,12 @@ export function Header({ showBackButton, backHref = "/", title }: HeaderProps) {
           <Button variant="ghost" size="sm" className="gap-2 h-10 w-10 sm:w-auto px-2 sm:px-3 touch-target">
             <Home className="h-4 w-4" />
             <span className="hidden sm:inline">Главная</span>
+          </Button>
+        </Link>
+        <Link href="/chats">
+          <Button variant="ghost" size="sm" className="gap-2 h-10 w-10 sm:w-auto px-2 sm:px-3 touch-target">
+            <MessageCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Чаты</span>
           </Button>
         </Link>
         <Link href="/profile">

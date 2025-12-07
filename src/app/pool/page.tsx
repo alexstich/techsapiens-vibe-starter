@@ -37,7 +37,20 @@ function PoolContent() {
         }
 
         const data = await response.json()
-        setUsers(data.users || [])
+        const rawUsers = data.users || []
+        
+        // Нормализуем score относительно максимального для правильного отображения цветов
+        // (чтобы самый релевантный был зелёным, а наименее - фиолетовым)
+        if (rawUsers.length > 0) {
+          const maxScore = Math.max(...rawUsers.map((u: PoolUser) => u.score))
+          const normalizedUsers = rawUsers.map((u: PoolUser) => ({
+            ...u,
+            score: maxScore > 0 ? u.score / maxScore : 0
+          }))
+          setUsers(normalizedUsers)
+        } else {
+          setUsers(rawUsers)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong")
       } finally {

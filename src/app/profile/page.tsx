@@ -52,13 +52,17 @@ export default function ProfilePage() {
         return
       }
       
-      // If no profile exists, create one
+      // If no profile exists, create one with random avatar
       if (!profileData) {
+        // Генерируем случайную аватарку из 100 доступных
+        const randomAvatarNumber = Math.floor(Math.random() * 100) + 1
+        const avatarUrl = `/avatars/avatar-${randomAvatarNumber}.svg`
+        
         const newProfile: Profile = {
           id: user.id,
           name: user.email?.split("@")[0] || "New User",
           bio: null,
-          avatar_url: null,
+          avatar_url: avatarUrl,
           telegram: null,
           linkedin: null,
           skills: null,
@@ -79,6 +83,7 @@ export default function ProfilePage() {
           .insert({
             id: user.id,
             name: newProfile.name,
+            avatar_url: avatarUrl,
           })
         
         if (insertError) {
@@ -187,7 +192,23 @@ export default function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl sm:text-2xl text-center">Мой профиль</CardTitle>
+            <div className="flex flex-col items-center gap-4">
+              {/* Avatar - не редактируется */}
+              {profile.avatar_url && (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.name || "Аватар"}
+                    className="w-24 h-24 rounded-full border-4 border-primary/20"
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-muted rounded-full p-1">
+                    <span className="text-xs text-muted-foreground">🔒</span>
+                  </div>
+                </div>
+              )}
+              <CardTitle className="text-xl sm:text-2xl text-center">Мой профиль</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Ready to Chat Switch - Prominent at top */}
