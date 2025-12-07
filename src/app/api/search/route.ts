@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { PoolUser } from '@/types';
 import { createClient } from '@/lib/supabase/server';
+import OpenAI from 'openai';
 
-// Синонимы для улучшения поиска (рус <-> англ и вариации)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Синонимы для улучшения текстового поиска (рус <-> англ и вариации)
 const SYNONYMS: Record<string, string[]> = {
   'фронтенд': ['frontend', 'фронт-энд', 'front-end', 'front end', 'ui'],
   'frontend': ['фронтенд', 'фронт-энд', 'front-end', 'front end', 'ui'],
@@ -45,10 +50,8 @@ function expandQueryWithSynonyms(query: string): string[] {
   const words = queryLower.split(/\s+/);
   const expandedTerms = new Set<string>();
   
-  // Добавляем исходный запрос
   expandedTerms.add(queryLower);
   
-  // Добавляем каждое слово и его синонимы
   for (const word of words) {
     expandedTerms.add(word);
     const synonyms = SYNONYMS[word];
@@ -74,84 +77,88 @@ interface ProfileRow {
   avatar_url: string | null;
 }
 
-// Поиск по профилям из базы данных
-function searchProfiles(profiles: ProfileRow[], query: string): PoolUser[] {
+interface SemanticMatch {
+  id: string;
+  name: string;
+  bio: string | null;
+  is_ready_to_chat: boolean | null;
+  similarity: number;
+  avatar_url?: string | null;
+  skills?: string[] | null;
+}
+
+// Генерация embedding для поискового запроса
+async function generateQueryEmbedding(query: string): Promise<number[] | null> {
+  try {
+    const response = await openai.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: query,
+    });
+    return response.data[0].embedding;
+  } catch (error) {
+    console.error('Error generating query embedding:', error);
+    return null;
+  }
+}
+
+// Текстовый поиск по профилям (fallback и дополнение к RAG)
+function textSearchProfiles(profiles: ProfileRow[], query: string): Map<string, number> {
   const searchTerms = expandQueryWithSynonyms(query);
   const originalWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const scores = new Map<string, number>();
   
-  // Ищем совпадения
-  const matched = profiles
-    .map((p) => {
-      // Считаем релевантность по различным полям
-      let relevance = 0;
-      const matchedOriginalTerms = new Set<string>();
+  for (const p of profiles) {
+    let relevance = 0;
+    const matchedOriginalTerms = new Set<string>();
+    
+    const searchFields = [
+      { text: p.bio, weight: 5 },
+      { text: (p.skills || []).join(' '), weight: 6 },
+      { text: p.can_help, weight: 2 },
+      { text: p.needs_help, weight: 1 },
+      { text: (p.looking_for || []).join(' '), weight: 1 },
+      { text: p.name, weight: 2 },
+    ].filter(f => f.text);
+    
+    for (const field of searchFields) {
+      const fieldLower = field.text!.toLowerCase();
       
-      const searchFields = [
-        { text: p.bio, weight: 5, isMain: true },
-        { text: (p.skills || []).join(' '), weight: 6, isMain: true },
-        { text: p.can_help, weight: 2, isMain: false },
-        { text: p.needs_help, weight: 1, isMain: false },
-        { text: (p.looking_for || []).join(' '), weight: 1, isMain: false },
-        { text: p.name, weight: 2, isMain: false },
-      ].filter(f => f.text);
-      
-      for (const field of searchFields) {
-        const fieldLower = field.text!.toLowerCase();
-        
-        // Сначала проверяем оригинальные слова запроса
-        for (const term of originalWords) {
-          if (fieldLower.includes(term)) {
-            const regex = new RegExp(`\\b${term}\\b`, 'i');
-            if (regex.test(field.text!)) {
-              // Точное совпадение оригинального слова - максимум очков
-              relevance += field.weight * 3;
-              matchedOriginalTerms.add(term);
-            } else {
-              relevance += field.weight * 2;
-              matchedOriginalTerms.add(term);
-            }
-          }
-        }
-        
-        // Потом проверяем синонимы (но с меньшим весом)
-        for (const term of searchTerms) {
-          if (!originalWords.includes(term) && fieldLower.includes(term)) {
-            const regex = new RegExp(`\\b${term}\\b`, 'i');
-            if (regex.test(field.text!)) {
-              relevance += field.weight * 1.5;
-            } else {
-              relevance += field.weight * 0.5;
-            }
+      for (const term of originalWords) {
+        if (fieldLower.includes(term)) {
+          const regex = new RegExp(`\\b${term}\\b`, 'i');
+          if (regex.test(field.text!)) {
+            relevance += field.weight * 3;
+            matchedOriginalTerms.add(term);
+          } else {
+            relevance += field.weight * 2;
+            matchedOriginalTerms.add(term);
           }
         }
       }
       
-      // Бонус за совпадение нескольких оригинальных слов
-      if (matchedOriginalTerms.size >= 2) {
-        relevance *= 1.5;
+      for (const term of searchTerms) {
+        if (!originalWords.includes(term) && fieldLower.includes(term)) {
+          const regex = new RegExp(`\\b${term}\\b`, 'i');
+          if (regex.test(field.text!)) {
+            relevance += field.weight * 1.5;
+          } else {
+            relevance += field.weight * 0.5;
+          }
+        }
       }
-      if (matchedOriginalTerms.size >= 3) {
-        relevance *= 1.3;
-      }
-      
-      // Даем минимальный базовый score всем пользователям (чтобы они тоже отображались)
-      const baseScore = 0.1;
-      return { profile: p, relevance: relevance + baseScore };
-    })
-    .sort((a, b) => b.relevance - a.relevance);
-
-  // Конвертируем в PoolUser - возвращаем ВСЕХ пользователей
-  const maxRelevance = Math.max(...matched.map(r => r.relevance), 1);
+    }
+    
+    if (matchedOriginalTerms.size >= 2) {
+      relevance *= 1.5;
+    }
+    if (matchedOriginalTerms.size >= 3) {
+      relevance *= 1.3;
+    }
+    
+    scores.set(p.id, relevance);
+  }
   
-  return matched.map((item) => ({
-    id: item.profile.id, // UUID из Supabase
-    name: item.profile.name,
-    bio: item.profile.bio || null,
-    isReady: item.profile.is_ready_to_chat ?? true,
-    score: item.relevance / maxRelevance, // Нормализуем score 0-1
-    position: { x: 0, y: 0 },
-    avatarUrl: item.profile.avatar_url || null,
-  }));
+  return scores;
 }
 
 export async function GET(request: NextRequest) {
@@ -165,24 +172,22 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     
-    // Получаем текущего пользователя (опционально, для исключения себя из результатов)
+    // Получаем текущего пользователя
     const { data: { user } } = await supabase.auth.getUser();
     
-    // Загружаем все профили из базы данных
-    let profilesQuery = supabase
-      .from('profiles')
-      .select('id, name, bio, skills, can_help, needs_help, looking_for, is_ready_to_chat, avatar_url')
-      .limit(500);
+    // Параллельно запускаем семантический поиск и загрузку всех профилей
+    const [queryEmbedding, profilesResult] = await Promise.all([
+      generateQueryEmbedding(query),
+      supabase
+        .from('profiles')
+        .select('id, name, bio, skills, can_help, needs_help, looking_for, is_ready_to_chat, avatar_url')
+        .limit(500)
+    ]);
     
-    // Исключаем текущего пользователя если авторизован
-    if (user) {
-      profilesQuery = profilesQuery.neq('id', user.id);
-    }
+    const { data: profiles, error: profilesError } = profilesResult;
     
-    const { data: profiles, error } = await profilesQuery;
-    
-    if (error) {
-      console.error('Error fetching profiles:', error);
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
       return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
     }
     
@@ -190,8 +195,84 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ users: [] });
     }
     
-    // Выполняем поиск по профилям
-    const users = searchProfiles(profiles as ProfileRow[], query);
+    // Фильтруем текущего пользователя
+    const filteredProfiles = user 
+      ? profiles.filter(p => p.id !== user.id)
+      : profiles;
+    
+    // Семантический поиск через RAG (если embedding успешно создан)
+    let semanticScores = new Map<string, number>();
+    
+    if (queryEmbedding) {
+      try {
+        const { data: semanticResults, error: rpcError } = await supabase
+          .rpc('match_profiles', {
+            query_embedding: JSON.stringify(queryEmbedding),
+            current_user_id: user?.id || null,
+            match_count: 100
+          });
+        
+        if (rpcError) {
+          console.error('RAG search error:', rpcError);
+        } else if (semanticResults) {
+          console.log(`RAG found ${semanticResults.length} semantic matches for "${query}"`);
+          for (const match of semanticResults as SemanticMatch[]) {
+            // similarity уже от 0 до 1
+            semanticScores.set(match.id, match.similarity);
+          }
+        }
+      } catch (error) {
+        console.error('RAG RPC error:', error);
+      }
+    }
+    
+    // Текстовый поиск (синонимы + точные совпадения)
+    const textScores = textSearchProfiles(filteredProfiles as ProfileRow[], query);
+    
+    // Комбинируем результаты: RAG (70%) + текстовый (30%)
+    const RAG_WEIGHT = 0.7;
+    const TEXT_WEIGHT = 0.3;
+    
+    // Нормализуем текстовые скоры
+    const maxTextScore = Math.max(...textScores.values(), 1);
+    
+    const combinedResults = filteredProfiles.map((p) => {
+      const semanticScore = semanticScores.get(p.id) || 0;
+      const textScore = (textScores.get(p.id) || 0) / maxTextScore;
+      
+      // Если есть семантический скор - комбинируем, иначе только текстовый
+      const finalScore = semanticScore > 0 
+        ? (semanticScore * RAG_WEIGHT) + (textScore * TEXT_WEIGHT)
+        : textScore * 0.5; // Профили без embedding получают пониженный текстовый скор
+      
+      return {
+        profile: p,
+        score: finalScore,
+        hasSemanticMatch: semanticScore > 0,
+        semanticScore,
+        textScore
+      };
+    });
+    
+    // Сортируем по комбинированному скору
+    combinedResults.sort((a, b) => b.score - a.score);
+    
+    // Логируем топ-5 для отладки
+    console.log(`Search "${query}" - Top 5 results:`);
+    combinedResults.slice(0, 5).forEach((r, i) => {
+      console.log(`  ${i + 1}. ${r.profile.name}: score=${r.score.toFixed(3)} (semantic=${r.semanticScore.toFixed(3)}, text=${r.textScore.toFixed(3)})`);
+    });
+    
+    // Формируем ответ
+    const users: PoolUser[] = combinedResults.map((item) => ({
+      id: item.profile.id,
+      name: item.profile.name,
+      bio: item.profile.bio || null,
+      isReady: item.profile.is_ready_to_chat ?? true,
+      score: item.score,
+      position: { x: 0, y: 0 },
+      avatarUrl: item.profile.avatar_url || null,
+    }));
     
     return NextResponse.json({ users });
   } catch (error) {
