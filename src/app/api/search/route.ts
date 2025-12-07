@@ -201,14 +201,14 @@ export async function GET(request: NextRequest) {
       : profiles;
     
     // Семантический поиск через RAG (если embedding успешно создан)
-    let semanticScores = new Map<string, number>();
+    const semanticScores = new Map<string, number>();
     
     if (queryEmbedding) {
       try {
         const { data: semanticResults, error: rpcError } = await supabase
           .rpc('match_profiles', {
             query_embedding: JSON.stringify(queryEmbedding),
-            current_user_id: user?.id || null,
+            current_user_id: user?.id,
             match_count: 100
           });
         
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
     const TEXT_WEIGHT = 0.3;
     
     // Нормализуем текстовые скоры
-    const maxTextScore = Math.max(...textScores.values(), 1);
+    const maxTextScore = Math.max(...Array.from(textScores.values()), 1);
     
     const combinedResults = filteredProfiles.map((p) => {
       const semanticScore = semanticScores.get(p.id) || 0;
